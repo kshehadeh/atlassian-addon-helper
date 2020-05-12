@@ -4,6 +4,7 @@ import { Application, Router } from "express";
 import authenticationMiddleware from "./auth";
 import bodyParser from "body-parser";
 import debug from "debug";
+import { Client } from "jira.js";
 
 export const logger = debug('atlassian-addon-helper');
 
@@ -15,6 +16,13 @@ export interface IWebhookPayload {
     event: string,
 
     [index: string]: any
+}
+
+export interface IJiraConnection {
+    host: string,
+    username: string,
+    apiToken: string,
+    client?: Client
 }
 
 /**
@@ -69,12 +77,12 @@ export interface IAtlassianDescriptor {
     /**
      * The friendly name of your addon
      */
-    name?: string;
+    name: string;
 
     /**
      * A description of the add on as it will appear in the atlassian manage addons page.
      */
-    description?: string;
+    description: string;
 
     /**
      * The vendor as it will appear in the atlassian manage addons page.
@@ -155,7 +163,7 @@ export class AtlassianAddon {
     protected _db: Keyv;
     protected _metaRouter: IRouter;
     protected _addonPath: string;
-
+    protected _jira: IJiraConnection;    
 
     /**
      * Instantiate an AtlassianAddon object
@@ -168,13 +176,16 @@ export class AtlassianAddon {
      *                  available here: https://github.com/lukechilds/keyv
      * @param maxTokenAge When a session token is created by the addon, this is the amount of time in seconds that
      *                  it will take for the token to expire after creation.
+     * @param jiraConnection If given, the addon will be able to check if it's registered as well as be 
+     *                  be able to register and unregister itself.
      */
     public constructor(
         params: IAtlassianDescriptor,
         subApp: Application,
         addonPath: string,
         dbConnectionString?: string,
-        maxTokenAge?: number) {
+        maxTokenAge?: number,
+        jiraConnection?: IJiraConnection) {
 
         const defaults = {
             scopes: [
@@ -182,6 +193,19 @@ export class AtlassianAddon {
             ]
         };
 
+        this._jira = jiraConnection;
+        if (this._jira) {
+            this._jira.client = new Client({
+                host: this._jira.host,
+                authentication: {
+                    basic: {
+                        username: this._jira.username,
+                        apiToken: this._jira.apiToken
+                    }
+                }
+            });
+        }
+        
         this._maxTokenAge = maxTokenAge || 15 * 60;
 
         // The descriptor data that was passed in here will be used
@@ -213,6 +237,10 @@ export class AtlassianAddon {
         // Ensure that we we  have the lifecycle endpoints created a
         //  and  ready to accept install/uninstall  and descriptor requests.
         this.addLifecycleEndpoints();
+    }
+
+    get api(): Client {
+        return this._jira ? this._jira.client : undefined;
     }
 
     get maxTokenAge(): number {
@@ -418,7 +446,6 @@ export class AtlassianAddon {
             return undefined;
         }
     }
-
 
     /**
      * Generates a consistent error response
