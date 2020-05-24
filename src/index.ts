@@ -232,7 +232,7 @@ export class AtlassianAddon {
         //  key which will be given at the time of installation of the
         //  addon.  The client details  are used to decode JWTs that  are
         //  passed in during callback (like webhooks).
-        this._db = new Keyv(dbConnectionString, {namespace:"jira-conn-addon"});
+        this._db = new Keyv(dbConnectionString, {namespace:this._descriptorData.key});
 
         // Ensure that we we  have the lifecycle endpoints created a
         //  and  ready to accept install/uninstall  and descriptor requests.
