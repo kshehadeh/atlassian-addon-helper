@@ -163,7 +163,7 @@ export class AtlassianAddon {
     protected _db: Keyv;
     protected _metaRouter: IRouter;
     protected _addonPath: string;
-    protected _jira: IJiraConnection;    
+    protected _jira: IJiraConnection;
 
     /**
      * Instantiate an AtlassianAddon object
@@ -176,7 +176,7 @@ export class AtlassianAddon {
      *                  available here: https://github.com/lukechilds/keyv
      * @param maxTokenAge When a session token is created by the addon, this is the amount of time in seconds that
      *                  it will take for the token to expire after creation.
-     * @param jiraConnection If given, the addon will be able to check if it's registered as well as be 
+     * @param jiraConnection If given, the addon will be able to check if it's registered as well as be
      *                  be able to register and unregister itself.
      */
     public constructor(
@@ -205,7 +205,7 @@ export class AtlassianAddon {
                 }
             });
         }
-        
+
         this._maxTokenAge = maxTokenAge || 15 * 60;
 
         // The descriptor data that was passed in here will be used
@@ -407,17 +407,17 @@ export class AtlassianAddon {
                     const payload: IWebhookPayload = req.body;
 
                     // Do a search of the stored webhook configurations looking
-                    //  for the one with the matching event name.  If found, then
-                    //  call the handler, otherwise return a
-                    const index = webhooks.findIndex((wh) => wh.definition.event === payload.webhookEvent);
-                    if (index >= 0) {
-                        await webhooks[index].handler(payload);
-                        return AtlassianAddon.sendError(200, "Event handled successfully", res);
-                    } else {
-                        logger(`Webhook event handler not found for ${req.body.event}`);
-                        return AtlassianAddon.sendError(404, "Event handler not found", res);
-                    }
+                    //  for the one with the matching event name.
+                    webhooks
+                        .filter((wh)=>{return wh.definition.event === payload.webhookEvent})
+                        .every(async (wh)=>{wh.handler(payload).catch((e)=>{
+                            logger(`Exception thrown in one of the webhooks for ${wh.definition.event}: ${e.toString()}`)
+                        })} );
+
+                    return AtlassianAddon.sendError(200, "Event handled successfully", res);
+
                 } catch (e) {
+
                     logger("Unable to handle a webhook event that  was received from Jira: " + e.toString());
                     return AtlassianAddon.sendError(500, "Exception thrown during handling of webhook event", res);
                 }
