@@ -16,7 +16,7 @@
     "@keyv/sqlite": "^2.0.2",
     "atlassian-jwt": "^1.0.2",
     "atlassian-oauth2": "^0.4.2",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "body-parser": "^1.19.0",
     "debug": "^4.1.1",
     "express": "^4.17.1",
