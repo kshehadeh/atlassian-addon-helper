@@ -4,7 +4,7 @@ import { Application, Router } from "express";
 import authenticationMiddleware from "./auth";
 import bodyParser from "body-parser";
 import debug from "debug";
-import { Client } from "jira.js";
+import { Version2Client as Client } from "jira.js";
 
 export const logger = debug('atlassian-addon-helper');
 
@@ -199,7 +199,7 @@ export class AtlassianAddon {
                 host: this._jira.host,
                 authentication: {
                     basic: {
-                        username: this._jira.username,
+                        email: this._jira.username,
                         apiToken: this._jira.apiToken
                     }
                 }
